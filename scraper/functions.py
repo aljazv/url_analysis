@@ -1,8 +1,6 @@
 
-
 # Create your views here.
-from bs4 import BeautifulSoup, Doctype
-from urllib.parse import urlparse
+from bs4 import  Doctype
 import requests
 import re
 

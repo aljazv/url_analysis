@@ -1,11 +1,7 @@
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse
-import scraper.functions as fun
-import requests
+
 
 from scraper.serializers import UrlSerializer
 

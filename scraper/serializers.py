@@ -3,10 +3,10 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import scraper.functions as fun
 import requests
-from scraper.models import  UrlModel
-from datetime import datetime, timedelta
+from scraper.models import UrlModel
+from datetime import timedelta
 from django.utils import timezone
-import pytz
+
 
 
 class UrlSerializer(serializers.Serializer):
