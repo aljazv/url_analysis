@@ -10,7 +10,6 @@ from scraper.serializers import UrlSerializer
 # url = "https://pythonspot.com/wp-login.php?redirect_to=https%3A%2F%2Fpythonspot.com%2Fextract-links-from-webpage-beautifulsoup%2F"
 
 
-
 @csrf_exempt
 def url_info(request):
 
