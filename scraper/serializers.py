@@ -3,57 +3,66 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import scraper.functions as fun
 import requests
-
-
-
-class Url(object):
-    def __init__(self, url, html_version, title, h1, h2, h3, h4, h5, h6, internal, external, inaccessible, has_loginform):
-        self.url = url
-        self.html_version = html_version
-        self.title = title
-        self.h1 = h1
-        self.h2 = h2
-        self.h3 = h3
-        self.h4 = h4
-        self.h5 = h5
-        self.h6 = h6
-        self.internal = internal
-        self.external = external
-        self.inaccessible = inaccessible
-        self.has_loginform = has_loginform
+from scraper.models import  UrlModel
+from datetime import datetime, timedelta
+from django.utils import timezone
+import pytz
 
 
 class UrlSerializer(serializers.Serializer):
     url = serializers.URLField(required=True)
-    html_version = serializers.CharField(max_length=200, required=False)
-    title = serializers.CharField(max_length=200, required=False)
-    h1 = serializers.IntegerField(required=False)
-    h2 = serializers.IntegerField(required=False)
-    h3 = serializers.IntegerField(required=False)
-    h4 = serializers.IntegerField(required=False)
-    h5 = serializers.IntegerField(required=False)
-    h6 = serializers.IntegerField(required=False)
-    internal = serializers.IntegerField(required=False)
-    external = serializers.IntegerField(required=False)
-    inaccessible = serializers.IntegerField(required=False)
-    has_loginform = serializers.BooleanField(required=False)
+    html_version = serializers.CharField(max_length=200, required=False, read_only=True)
+    title = serializers.CharField(max_length=200, required=False, read_only=True)
+    h1 = serializers.IntegerField(required=False, read_only=True)
+    h2 = serializers.IntegerField(required=False, read_only=True)
+    h3 = serializers.IntegerField(required=False, read_only=True)
+    h4 = serializers.IntegerField(required=False, read_only=True)
+    h5 = serializers.IntegerField(required=False, read_only=True)
+    h6 = serializers.IntegerField(required=False, read_only=True)
+    internal = serializers.IntegerField(required=False, read_only=True)
+    external = serializers.IntegerField(required=False, read_only=True)
+    inaccessible = serializers.IntegerField(required=False, read_only=True)
+    has_login_form = serializers.BooleanField(required=False, read_only=True)
 
     def create(self, validated_data):
 
         url = validated_data["url"]
 
+        # if we have cached web page
+        if UrlModel.objects.filter(url=url).exists():
+
+            existing_object = UrlModel.objects.get(url=url)
+
+            # if cached web page is older than 1 day we recache
+
+            if existing_object.created < (timezone.now()-timedelta(days=1)):
+                r = requests.get(url)
+                parsed_uri = urlparse(url)
+                domain_name = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
+                soup = BeautifulSoup(r.text, "html.parser")
+                html_version = fun.html_version(soup)
+                title = fun.page_title(soup)
+                headings = fun.headings(soup)
+                links = fun.number_of_links(soup, domain_name)
+                has_login_form = fun.has_login(soup)
+
+                UrlModel.objects.filter(pk= existing_object.pk).update(**validated_data, html_version=html_version, title=title, **headings,
+                                               **links, has_login_form=has_login_form, created = timezone.now())
+
+            return existing_object
+
+        # request webpage and go through all tasks
         r = requests.get(url)
         parsed_uri = urlparse(url)
         domain_name = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
         soup = BeautifulSoup(r.text, "html.parser")
-        # soup = BeautifulSoup(open("file2.html"), "html.parser")
         html_version = fun.html_version(soup)
         title = fun.page_title(soup)
         headings = fun.headings(soup)
         links = fun.number_of_links(soup, domain_name)
-        has_loginform = fun.has_login(soup)
+        has_login_form = fun.has_login(soup)
 
-        return Url(**validated_data, html_version=html_version, title=title, **headings, **links, has_loginform = has_loginform)
+        return UrlModel.objects.create(**validated_data, html_version=html_version, title=title, **headings, **links, has_login_form = has_login_form)
 
     def update(self, instance, validated_data):
         return instance
