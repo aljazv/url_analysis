@@ -2,10 +2,12 @@
 
 All needed dependencies are in the requirements.txt. To install them use the following command:
 ```
-pip install -r /path/to/requirements.txt
+cd url_analysis
+pip install -r requirements.txt
 ```
-Start application locally:
+First start application locally:
 ```
+python manage.py migrate
 python manage.py runserver
 ```
 If you use application locally then to scan a URL send a JSON POST to localhost:8000/url/. The sent JSON should look like this:
